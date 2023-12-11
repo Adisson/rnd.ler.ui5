@@ -107,7 +107,13 @@ sap.ui.define([
                     oDocumento.CardCode = aCardCode[0];
                     oDocumento.DocCurrency = oData.moneda;
 
-                    var oCuenta = await Solicitud.obtenerCuenta('ER03');
+                    await Solicitud.obtenerParametrizacion('03');
+                    
+                    var oParamCuenta = Solicitud.obtenerParametrizacionAtributo('U_UPP_TPOOPER');
+                    var oParamEstado = Solicitud.obtenerParametrizacionAtributo('U_UPP_ESTADO');
+                    var oParamStatus = Solicitud.obtenerParametrizacionAtributo('U_UPP_ERSTATUS');
+
+                    var oCuenta = await Solicitud.obtenerCuenta(oParamCuenta.U_UPP_VALORO);
                     oDocumento.ControlAccount = oCuenta ? oCuenta.U_UPP_CUENTA : '141301';
 
                     var oCuentaTransf = await Solicitud.obtenerCuenta('TR01');
@@ -126,17 +132,17 @@ sap.ui.define([
 
                     oDocumento.U_UPP_TPOOPER = oCuenta ? oCuenta.Code : 'ER03';
                     
-                    oDocumento.DocObjectCode = "bopot_IncomingPayments";
+                    oDocumento.DocObjectCode = oParamCuenta.U_UPP_OBJETOP;
                     oDocumento.TaxDate = sTaxDate;
                     oDocumento.DueDate = sDueDate;
                     oDocumento.JournalRemarks = oData.comentarios;
                     oDocumento.U_UPP_DESREN = oData.descripcionRendicion;
                     oDocumento.U_UPP_DEP = oData.departamento;
                     oDocumento.U_UPP_TIPSOL = oData.tipoSolicitud;
-                    oDocumento.U_UPP_ESTADO = "P";
+                    oDocumento.U_UPP_ESTADO = oParamEstado.U_UPP_VALORD;
                     oDocumento.U_UPP_RECHAZADO = null;
                     oDocumento.U_UPP_USUARIO = email.split('@')[0];
-                    oDocumento.U_UPP_ERSTATUS = '*';
+                    oDocumento.U_UPP_ERSTATUS = oParamStatus.U_UPP_VALORD;
 
                     await Solicitud.crearDocumento(oDocumento);
                     
@@ -149,7 +155,11 @@ sap.ui.define([
                     this.byId('multiInput').destroyTokens();
 
                 } catch (error) {
-                    sap.m.MessageBox.success(this.getResourceBundle().getText('msgDocumentoCreado'));
+                    if (error.responseJSON){
+                        sap.m.MessageBox.error(error.responseJSON.error.message);
+                    }else{
+                        sap.m.MessageBox.error(this.getResourceBundle().getText('ocurrioError'));
+                    }
                 }
             },
             onChangeMonto: function(e){
